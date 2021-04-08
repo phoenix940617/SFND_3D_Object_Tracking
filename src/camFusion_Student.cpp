@@ -225,6 +225,7 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 
 	double dT = 1 / frameRate;
 	TTC = -dT / (1 - medDistRatio);
+	std::cout << "camera TTC : " << TTC << ", medDistRatio: " << medDistRatio << ", distRatios.size(): " << distRatios.size() << std::endl;
 }
 
 std::vector<LidarPoint> RemoveOutliners(std::vector<LidarPoint> &lidarPoints, int numThreshold,
@@ -264,6 +265,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
 	// compute TTC from both measurements
 	TTC = minXCurr / (frameRate * (minXPrev - minXCurr));
+	std::cout << "lidar ttc: " << TTC << ", minXCurr: " << minXCurr << ", minXPrev: " << minXPrev << std::endl;
 }
 
 

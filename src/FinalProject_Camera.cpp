@@ -129,7 +129,7 @@ int main(int argc, const char *argv[])
 		clusterLidarWithROI((dataBuffer.end() - 1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
 
 		// Visualize 3D objects
-		bVis = true;
+		bVis = false;
 		if (bVis)
 		{
 			show3DObjects((dataBuffer.end() - 1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
@@ -150,7 +150,7 @@ int main(int argc, const char *argv[])
 
 		// extract 2D keypoints from current image
 		vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-		string detectorType = "FAST";//SHITOMASI
+		string detectorType = "BRISK";//SHITOMASI
 
 		if (detectorType.compare("SHITOMASI") == 0)
 		{
@@ -158,8 +158,20 @@ int main(int argc, const char *argv[])
 		}
 		else
 		{
+			if (detectorType.compare("HARRIS") == 0) {
+				detKeypointsHarris(keypoints, imgGray, false);
+			}
 			if (detectorType.compare("FAST") == 0) {
 				detKeypointsFAST(keypoints, imgGray, false);
+			}
+			if (detectorType.compare("BRISK") == 0) {
+				detKeypointsBRISK(keypoints, imgGray, false);
+			}
+			if (detectorType.compare("ORB") == 0) {
+				detKeypointsORB(keypoints, imgGray, false);
+			}
+			if (detectorType.compare("SIFT") == 0) {
+				detKeypointsSIFT(keypoints, imgGray, false);
 			}
 		}
 
@@ -186,7 +198,7 @@ int main(int argc, const char *argv[])
 		/* EXTRACT KEYPOINT DESCRIPTORS */
 
 		cv::Mat descriptors;
-		string descriptorType = "BRISK"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
+		string descriptorType = "FREAK"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
 		descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
 
 		// push descriptors for current frame to end of data buffer
@@ -230,7 +242,18 @@ int main(int argc, const char *argv[])
 
 
 			/* COMPUTE TTC ON OBJECT IN FRONT */
-
+			if (1) {
+				cv::Mat matchImg = (dataBuffer.end() - 1)->cameraImg.clone();
+				cv::drawMatches((dataBuffer.end() - 2)->cameraImg, (dataBuffer.end() - 2)->keypoints,
+					(dataBuffer.end() - 1)->cameraImg, (dataBuffer.end() - 1)->keypoints,
+					(dataBuffer.end() - 1)->kptMatches, matchImg, cv::Scalar::all(-1),
+					cv::Scalar::all(-1), vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+				string windowName = "allMatching KeyPionts";
+				cv::namedWindow(windowName, 7);
+				cv::imshow(windowName, matchImg);
+				cout << "Press key to continue to next frame" << endl;
+				cv::waitKey(0);
+			}
 			// loop over all BB match pairs
 			for (auto it1 = (dataBuffer.end() - 1)->bbMatches.begin(); it1 != (dataBuffer.end() - 1)->bbMatches.end(); ++it1)
 			{
@@ -251,7 +274,7 @@ int main(int argc, const char *argv[])
 						prevBB = &(*it2);
 					}
 				}
-
+				std::cout << "curBB lidarPoint: " << currBB->lidarPoints.size() << ", prevBB lidarPoint: " << prevBB->lidarPoints.size() << std::endl;
 				// compute TTC for current match
 				if (currBB->lidarPoints.size() > 0 && prevBB->lidarPoints.size() > 0) // only compute TTC if we have Lidar points
 				{
@@ -286,6 +309,19 @@ int main(int argc, const char *argv[])
 						cout << "Press key to continue to next frame" << endl;
 						cv::waitKey(0);
 					}
+					if (bVis) {
+						cv::Mat matchImg = (dataBuffer.end() - 1)->cameraImg.clone();
+						cv::drawMatches((dataBuffer.end() - 2)->cameraImg, (dataBuffer.end() - 2)->keypoints,
+							(dataBuffer.end() - 1)->cameraImg, (dataBuffer.end() - 1)->keypoints,
+							currBB->kptMatches, matchImg, cv::Scalar::all(-1),
+							cv::Scalar::all(-1), vector<char>(), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+						string windowName = "Matching KeyPionts";
+						cv::namedWindow(windowName, 7);
+						cv::imshow(windowName, matchImg);
+						cout << "Press key to continue to next frame" << endl;
+						cv::waitKey(0);
+					}
+
 					bVis = false;
 
 				} // eof TTC computation
